@@ -7,6 +7,10 @@ import (
 )
 
 func main() {
+	if *flagVersion {
+		fmt.Printf("ver:%s rev:%s\n", Version, Revision)
+		return
+	}
 	srv := &smtpsrv.Server{
 		Addr:        *flagListenAddr,
 		MaxBodySize: *flagMaxMessageSize,
