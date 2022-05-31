@@ -1,12 +1,14 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 
 	"github.com/alash3al/go-smtpsrv"
 )
 
 func main() {
+	flag.Parse()
 	if *flagVersion {
 		fmt.Printf("ver:%s rev:%s\n", Version, Revision)
 		return
