@@ -23,7 +23,23 @@ func TestStrictValidation(t *testing.T) {
 			err: true,
 		},
 		{
-			name: "valid",
+			name: "fake-localhost",
+			req: &smtpsrv.Request{
+				From:       "hoge@localhost.localdomain",
+				RemoteAddr: "1.1.1.1:1111",
+			},
+			err: true,
+		},
+		{
+			name: "fake-gmail",
+			req: &smtpsrv.Request{
+				From:       "hoge@gmail.com",
+				RemoteAddr: "1.1.1.1:1111",
+			},
+			err: true,
+		},
+		{
+			name: "valid-gmail",
 			req: &smtpsrv.Request{
 				From:       "hoge@gmail.com",
 				RemoteAddr: "35.190.247.1:1111",
