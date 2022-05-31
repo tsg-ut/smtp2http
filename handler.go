@@ -14,28 +14,30 @@ import (
 	"github.com/zaccone/spf"
 )
 
+func StrictValidation(req *smtpsrv.Request) error {
+	ipstr, _, _ := net.SplitHostPort(req.RemoteAddr)
+	ip := net.ParseIP(ipstr)
+
+	// trust mails from gmail.com
+	// https://datatracker.ietf.org/doc/html/rfc7208#section-4
+	spfgmail, _, _ := spf.CheckHost(ip, "gmail.com", "gmail.com")
+	nonspam := (spfgmail == spf.Pass) || ip.IsLoopback() || ip.IsPrivate()
+
+	if !nonspam {
+		// should say "you are spammer" to spammer.
+		return errors.New("Your host isn't configured correctly or you are a spammer -_-")
+	}
+	return nil
+}
+
 func handler(req *smtpsrv.Request) error {
 	log.Printf(`[handler] from:"%s" to:"%s" remote_addr:"%s"`+"\n", req.From, req.To, req.RemoteAddr)
 
 	// validate the from data
 	if *flagStrictValidation {
-		// trust mails from gmail.com
-		from := req.From
-		ipstr, _, _ := net.SplitHostPort(req.RemoteAddr)
-		ip := net.ParseIP(ipstr)
-
-		spfgmail, _, _ := spf.CheckHost(ip, `gmail.com`, from)
-		nonspam := (spfgmail == spf.Pass) || ip.IsPrivate()
-
-		if !nonspam {
+		if err := StrictValidation(req); err != nil {
 			log.Println(`[handler] spam detected`)
-			// should say "you are spammer" to spammer.
-			return errors.New("Your host isn't configured correctly or you are a spammer -_-")
-		}
-
-		if !req.Mailable {
-			log.Println(`[handler] not mailable`)
-			return nil
+			return err
 		}
 	}
 
