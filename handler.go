@@ -39,10 +39,6 @@ func handler(req *smtpsrv.Request) error {
 			log.Println(`[handler] spam detected`)
 			return err
 		}
-		if !req.Mailable {
-			log.Println(`[handler] not mailable`)
-			return nil
-		}
 	}
 
 	msg, err := parsemail.Parse(req.Message)
