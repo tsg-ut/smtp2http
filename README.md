@@ -5,8 +5,7 @@ smtp2http is a simple smtp server that resends the incoming email to the configu
 Installation
 =============
 - binaries: go to [releases](https://github.com/tsg-ut/smtp2http/releases) page and choose your distribution.
-- go: `go get github.com/tsg-ut/smtp2http`
-- docker: `docker run --network=host uflare/smtp2http --listen=:25 --webhook=http://localhost:8080/api/smtp-hook --strict=true`
+- go: `go install github.com/tsg-ut/smtp2http`
 
 Usage
 =====
@@ -26,4 +25,4 @@ git push v3.1.4
 
 Author
 =======
-[uFlare](https://www.uflare.io) Company.
+uFlare Company was the original author.
