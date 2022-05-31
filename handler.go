@@ -21,15 +21,19 @@ func handler(req *smtpsrv.Request) error {
 	if *flagStrictValidation {
 		// trust mails from gmail.com
 		from := req.From
-		ip, _, _ := net.SplitHostPort(req.RemoteAddr)
-		spfres, _, _ := spf.CheckHost(net.ParseIP(ip), `gmail.com`, from)
-		spam := spfres != spf.Pass
+		ipstr, _, _ := net.SplitHostPort(req.RemoteAddr)
+		ip := net.ParseIP(ipstr)
 
-		if spam {
+		spfgmail, _, _ := spf.CheckHost(ip, `gmail.com`, from)
+		nonspam := (spfgmail == spf.Pass) || ip.IsPrivate()
+
+		if !nonspam {
 			log.Println(`[handler] spam detected`)
 			// should say "you are spammer" to spammer.
 			return errors.New("Your host isn't configured correctly or you are a spammer -_-")
-		} else if !req.Mailable {
+		}
+
+		if !req.Mailable {
 			log.Println(`[handler] not mailable`)
 			return nil
 		}
