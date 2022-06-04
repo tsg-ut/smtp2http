@@ -49,7 +49,7 @@ NEEDLES=(
     'json.addresses.from = "header-from@localhost.localdomain";'
     'json.addresses.mailfrom = "mail-from@localhost.localdomain";'
     'json.addresses.to = "header-to@localhost.localdomain";'
-    'json.body.text = "body text\n\n\r\n.\r";'
+    'json.body.text = "body text\n\r";'
     'json.subject = "subject";'
 )
 
