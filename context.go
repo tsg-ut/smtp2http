@@ -5,7 +5,7 @@ import (
 	"net/mail"
 	"net/netip"
 
-	"github.com/alash3al/go-smtpsrv"
+	"github.com/alash3al/go-smtpsrv/v3"
 )
 
 type Context interface {

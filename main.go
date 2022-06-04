@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/alash3al/go-smtpsrv"
+	"github.com/alash3al/go-smtpsrv/v3"
 )
 
 func main() {
