@@ -1,6 +1,6 @@
 module github.com/tsg-ut/smtp2http
 
-go 1.17
+go 1.18
 
 require (
 	github.com/alash3al/go-smtpsrv v0.0.0-20200606200409-605c4fdb0b9c
