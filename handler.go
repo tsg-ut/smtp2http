@@ -8,14 +8,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/DusanKasan/parsemail"
-	"github.com/alash3al/go-smtpsrv"
 	"github.com/go-resty/resty/v2"
 	"github.com/zaccone/spf"
 )
 
-func StrictValidation(req *smtpsrv.Request) error {
-	ipstr, _, _ := net.SplitHostPort(req.RemoteAddr)
+func StrictValidation(c Context) error {
+	ipstr, _, _ := net.SplitHostPort(c.RemoteAddr().String())
 	ip := net.ParseIP(ipstr)
 
 	// trust mails from gmail.com
@@ -30,18 +28,18 @@ func StrictValidation(req *smtpsrv.Request) error {
 	return nil
 }
 
-func handler(req *smtpsrv.Request) error {
-	log.Printf(`[handler] from:"%s" to:"%s" remote_addr:"%s"`+"\n", req.From, req.To, req.RemoteAddr)
+func handler(c Context) error {
+	log.Printf(`[handler] from:"%s" to:"%s" remote_addr:"%s"`+"\n", c.From(), c.To(), c.RemoteAddr())
 
 	// validate the from data
 	if *flagStrictValidation {
-		if err := StrictValidation(req); err != nil {
+		if err := StrictValidation(c); err != nil {
 			log.Println(`[handler] spam detected`)
 			return err
 		}
 	}
 
-	msg, err := parsemail.Parse(req.Message)
+	msg, err := c.Parse()
 	if err != nil {
 		log.Println(`[handler] fail to read, maybe because of huge size`)
 		return nil
@@ -55,7 +53,7 @@ func handler(req *smtpsrv.Request) error {
 			"html": string(msg.HTMLBody),
 		},
 		"addresses": map[string]interface{}{
-			"mailfrom": req.From,
+			"mailfrom": c.From().Address,
 			"from":     strings.Join(extractEmails(msg.From), ","),
 			"to":       strings.Join(extractEmails(msg.To), ","),
 			"cc":       strings.Join(extractEmails(msg.Cc), ","),
