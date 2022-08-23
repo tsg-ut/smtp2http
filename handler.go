@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net"
 	"strconv"
@@ -29,7 +30,7 @@ func StrictValidation(c Context) error {
 }
 
 func handler(c Context) error {
-	log.Printf(`[handler] from:"%s" to:"%s" remote_addr:"%s"`+"\n", c.From(), c.To(), c.RemoteAddr())
+	log.Printf("[handler] from:<%s> to:<%s> remote_addr:%s\n", c.From(), c.To(), c.RemoteAddr())
 
 	// validate the from data
 	if *flagStrictValidation {
@@ -41,7 +42,7 @@ func handler(c Context) error {
 
 	msg, err := c.Parse()
 	if err != nil {
-		log.Println(`[handler] fail to read, maybe because of huge size`)
+		log.Println(fmt.Errorf("[handler] fail to read, maybe because of huge size: %w", err))
 		return nil
 	}
 
@@ -64,7 +65,7 @@ func handler(c Context) error {
 
 	body, err := json.Marshal(params)
 	if err != nil {
-		log.Println(`[handler] internal error while encoding params: '` + err.Error() + `'`)
+		log.Println(fmt.Errorf(`[handler] internal error while encoding params: %w`, err))
 		return nil
 	}
 
@@ -73,7 +74,7 @@ func handler(c Context) error {
 		SetBody(body).
 		Post(*flagWebhook)
 	if err != nil {
-		log.Println(`[handler] internal error: '` + err.Error() + `'`)
+		log.Println(fmt.Errorf("[handler] internal error: %w", err))
 		return nil
 	}
 	if resp.StatusCode() != 200 {
