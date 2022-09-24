@@ -6,11 +6,11 @@ import (
 	main "github.com/tsg-ut/smtp2http"
 )
 
-func TestStrictValidation(t *testing.T) {
+func TestValidate(t *testing.T) {
 	tests := []struct {
-		name string
-		req  *main.TestContext
-		err  bool // err should be non-nil or not
+		name  string
+		req   *main.TestContext
+		valid bool
 	}{
 		{
 			name: "hoge",
@@ -18,7 +18,7 @@ func TestStrictValidation(t *testing.T) {
 				FromEmail:        "hoge@example.com",
 				RemoteAddrString: "1.1.1.1:1111",
 			},
-			err: true,
+			valid: false,
 		},
 		{
 			name: "fake-localhost",
@@ -26,7 +26,7 @@ func TestStrictValidation(t *testing.T) {
 				FromEmail:        "hoge@localhost.localdomain",
 				RemoteAddrString: "1.1.1.1:1111",
 			},
-			err: true,
+			valid: false,
 		},
 		{
 			name: "fake-gmail",
@@ -34,7 +34,7 @@ func TestStrictValidation(t *testing.T) {
 				FromEmail:        "hoge@gmail.com",
 				RemoteAddrString: "1.1.1.1:1111",
 			},
-			err: true,
+			valid: false,
 		},
 		{
 			name: "valid-gmail",
@@ -42,7 +42,7 @@ func TestStrictValidation(t *testing.T) {
 				FromEmail:        "hoge@gmail.com",
 				RemoteAddrString: "35.190.247.1:1111",
 			},
-			err: false,
+			valid: true,
 		},
 		{
 			name: "lo",
@@ -50,7 +50,7 @@ func TestStrictValidation(t *testing.T) {
 				FromEmail:        "hoge@localhost.localdomain",
 				RemoteAddrString: "127.0.0.1:1111",
 			},
-			err: false,
+			valid: true,
 		},
 		{
 			name: "private",
@@ -58,14 +58,14 @@ func TestStrictValidation(t *testing.T) {
 				FromEmail:        "hoge@anotherhost.localdomain",
 				RemoteAddrString: "172.16.0.1:1111",
 			},
-			err: false,
+			valid: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := main.StrictValidation(tt.req)
-			if (err != nil) != (tt.err == true) {
+			valid := main.Validate(tt.req)
+			if valid != tt.valid {
 				t.Fatal("fail")
 			}
 		})

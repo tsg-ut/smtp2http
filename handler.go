@@ -12,8 +12,8 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	MessageSpammer = "Your host isn't configured correctly or you are a spammer -_-"
+var (
+	ErrSpammer = errors.New("Your host isn't configured correctly or you are a spammer -_-")
 )
 
 type Handler struct {
@@ -21,7 +21,8 @@ type Handler struct {
 	Webhook    string
 }
 
-func StrictValidation(c Context) error {
+// Validate returns true if the email is worth receiving
+func Validate(c Context) bool {
 	ipstr, _, _ := net.SplitHostPort(c.RemoteAddr().String())
 	ip := net.ParseIP(ipstr)
 
@@ -30,11 +31,7 @@ func StrictValidation(c Context) error {
 	spfgmail, _, _ := spf.CheckHost(ip, "gmail.com", "gmail.com")
 	nonspam := (spfgmail == spf.Pass) || ip.IsLoopback() || ip.IsPrivate()
 
-	if !nonspam {
-		// should say "you are spammer" to spammer.
-		return errors.New(MessageSpammer)
-	}
-	return nil
+	return nonspam
 }
 
 func (h *Handler) handle(c Context) error {
@@ -47,9 +44,9 @@ func (h *Handler) handle(c Context) error {
 
 	// validate the from data
 	if h.Validation {
-		if err := StrictValidation(c); err != nil {
+		if !Validate(c) {
 			log.Infow("spam detected")
-			return err
+			return ErrSpammer
 		}
 	}
 
