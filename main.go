@@ -3,9 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/alash3al/go-smtpsrv/v3"
+	"go.uber.org/zap"
 )
 
 func main() {
@@ -16,20 +18,39 @@ func main() {
 		return
 	}
 
+	{
+		logger, err := zap.NewProduction()
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer logger.Sync()
+		zap.ReplaceGlobals(logger)
+	}
+
+	log := zap.S()
+
+	handler := Handler{
+		Validation: *flagStrictValidation,
+		Webhook:    *flagWebhook,
+	}
+
 	cfg := smtpsrv.ServerConfig{
 		ListenAddr:      *flagListenAddr,
 		BannerDomain:    *flagServerName,
-		ReadTimeout:     2 * time.Second,
-		WriteTimeout:    2 * time.Second,
+		ReadTimeout:     10 * time.Second,
+		WriteTimeout:    10 * time.Second,
 		MaxMessageBytes: int(*flagMaxMessageSize),
-		Handler:         func(c *smtpsrv.Context) error { return handler(c) },
+		Handler:         func(c *smtpsrv.Context) error { return handler.handle(c) },
 	}
 
-	fmt.Println("start the smtp server on address: ", *flagListenAddr)
-	fmt.Println("specified maximum body size: ", *flagMaxMessageSize, " bytes")
-	fmt.Println("specified server name: ", *flagServerName)
-	fmt.Println("specified webhook: ", *flagWebhook)
-	fmt.Println("validating the incoming FROM header: ", *flagStrictValidation)
+	log.Infow("start",
+		"addr", cfg.ListenAddr,
+		"maxmessage", cfg.MaxMessageBytes,
+		"banner", cfg.BannerDomain,
+		"webhook", handler.Webhook,
+		"validation", handler.Validation,
+	)
+	log.Sync()
 
-	fmt.Println(smtpsrv.ListenAndServe(&cfg))
+	log.Info(smtpsrv.ListenAndServe(&cfg))
 }

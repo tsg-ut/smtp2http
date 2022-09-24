@@ -3,46 +3,59 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
-	"log"
 	"net"
 	"strconv"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/zaccone/spf"
+	"go.uber.org/zap"
 )
+
+const (
+	MessageSpammer = "Your host isn't configured correctly or you are a spammer -_-"
+)
+
+type Handler struct {
+	Validation bool
+	Webhook    string
+}
 
 func StrictValidation(c Context) error {
 	ipstr, _, _ := net.SplitHostPort(c.RemoteAddr().String())
 	ip := net.ParseIP(ipstr)
 
-	// trust mails from gmail.com
+	// trust emails from gmail.com
 	// https://datatracker.ietf.org/doc/html/rfc7208#section-4
 	spfgmail, _, _ := spf.CheckHost(ip, "gmail.com", "gmail.com")
 	nonspam := (spfgmail == spf.Pass) || ip.IsLoopback() || ip.IsPrivate()
 
 	if !nonspam {
 		// should say "you are spammer" to spammer.
-		return errors.New("Your host isn't configured correctly or you are a spammer -_-")
+		return errors.New(MessageSpammer)
 	}
 	return nil
 }
 
-func handler(c Context) error {
-	log.Printf("[handler] from:<%s> to:<%s> remote_addr:%s\n", c.From(), c.To(), c.RemoteAddr())
+func (h *Handler) handle(c Context) error {
+	log := zap.S().With(
+		"from", c.From(),
+		"to", c.To(),
+		"remote_addr", c.RemoteAddr(),
+	)
+	log.Infow("receive message")
 
 	// validate the from data
-	if *flagStrictValidation {
+	if h.Validation {
 		if err := StrictValidation(c); err != nil {
-			log.Println(`[handler] spam detected`)
+			log.Infow("spam detected")
 			return err
 		}
 	}
 
 	msg, err := c.Parse()
 	if err != nil {
-		log.Println(fmt.Errorf("[handler] fail to read, maybe because of huge size: %w", err))
+		log.Errorw("fail to read", "error", err)
 		return nil
 	}
 
@@ -65,23 +78,23 @@ func handler(c Context) error {
 
 	body, err := json.Marshal(params)
 	if err != nil {
-		log.Println(fmt.Errorf(`[handler] internal error while encoding params: %w`, err))
+		log.Errorw("internal error while encoding params", "error", err)
 		return nil
 	}
 
 	resp, err := resty.New().R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(body).
-		Post(*flagWebhook)
+		Post(h.Webhook)
 	if err != nil {
-		log.Println(fmt.Errorf("[handler] internal error: %w", err))
+		log.Errorw("internal error", "error", err)
 		return nil
 	}
 	if resp.StatusCode() != 200 {
-		log.Println(`[handler] backend returned error: status=` + resp.Status())
+		log.Warnw("backend returned error", "status", resp.Status())
 		return nil
 	}
 
-	log.Println(`[handler] successfully processed`)
+	log.Infow("successfully processed")
 	return nil
 }
