@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net"
 	"strconv"
-	"strings"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/zaccone/spf"
@@ -57,18 +56,18 @@ func (h *Handler) handle(c Context) error {
 	}
 
 	params := map[string]interface{}{
-		"id":      msg.Header.Get("Message-ID"),
-		"subject": msg.Subject,
+		"id":      msg.GetHeader("Message-ID"),
+		"subject": msg.GetHeader("Subject"),
 		"body": map[string]interface{}{
-			"text": string(msg.TextBody),
-			"html": string(msg.HTMLBody),
+			"text": string(msg.Text),
+			"html": string(msg.HTML),
 		},
 		"addresses": map[string]interface{}{
 			"mailfrom": c.From().Address,
-			"from":     strings.Join(extractEmails(msg.From), ","),
-			"to":       strings.Join(extractEmails(msg.To), ","),
-			"cc":       strings.Join(extractEmails(msg.Cc), ","),
-			"bcc":      strings.Join(extractEmails(msg.Bcc), ","),
+			"from":     msg.GetHeader("From"),
+			"to":       msg.GetHeader("To"),
+			"cc":       msg.GetHeader("Cc"),
+			"bcc":      msg.GetHeader("Bcc"),
 		},
 		"file_count": strconv.Itoa(len(msg.Attachments)),
 	}
