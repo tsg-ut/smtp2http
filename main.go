@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/alash3al/go-smtpsrv/v3"
+	"github.com/emersion/go-smtp"
 	"go.uber.org/zap"
 )
 
@@ -34,23 +34,23 @@ func main() {
 		Webhook:    *flagWebhook,
 	}
 
-	cfg := smtpsrv.ServerConfig{
-		ListenAddr:      *flagListenAddr,
-		BannerDomain:    *flagServerName,
-		ReadTimeout:     10 * time.Second,
-		WriteTimeout:    10 * time.Second,
-		MaxMessageBytes: int(*flagMaxMessageSize),
-		Handler:         func(c *smtpsrv.Context) error { return handler.handle(c) },
-	}
+	s := smtp.NewServer(&backend{handler: handler.handle})
+	s.Addr = *flagListenAddr
+	s.Domain = *flagServerName
+	s.ReadTimeout = 10 * time.Second
+	s.WriteTimeout = 10 * time.Second
+	s.MaxMessageBytes = int(*flagMaxMessageSize)
+	s.AllowInsecureAuth = true
+	s.AuthDisabled = true
+	s.EnableSMTPUTF8 = false
 
 	log.Infow("start",
-		"addr", cfg.ListenAddr,
-		"maxmessage", cfg.MaxMessageBytes,
-		"banner", cfg.BannerDomain,
+		"addr", s.Addr,
+		"maxmessage", s.MaxMessageBytes,
+		"banner", s.Domain,
 		"webhook", handler.Webhook,
 		"validation", handler.Validation,
 	)
-	log.Sync()
 
-	log.Info(smtpsrv.ListenAndServe(&cfg))
+	log.Info(s.ListenAndServe())
 }
