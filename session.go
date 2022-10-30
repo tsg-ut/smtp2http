@@ -42,7 +42,7 @@ func (s *session) Mail(from string, opts smtp.MailOptions) (err error) {
 }
 func (s *session) Rcpt(to string) (err error) {
 	s.to, err = mail.ParseAddress(to)
-	return nil
+	return
 }
 func (s *session) Data(r io.Reader) error {
 	return s.handler(&ctxt{
