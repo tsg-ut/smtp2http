@@ -40,7 +40,7 @@ func TestValidate(t *testing.T) {
 			name: "valid-gmail",
 			req: &main.TestContext{
 				FromEmail:        "hoge@gmail.com",
-				RemoteAddrString: "35.190.247.1:1111",
+				RemoteAddrString: "209.85.220.41:1111",
 			},
 			valid: true,
 		},
