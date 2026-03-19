@@ -1,26 +1,36 @@
+version: 2
+
 project_name: smtp2http
+
 before:
   hooks:
     - go mod tidy
+
 builds:
   - main: .
     binary: smtp2http
     ldflags:
       - -s -w
-      - -X main.Version={{.Version}}
-      - -X main.Revision={{.ShortCommit}}
+      - -X main.Version={{ .Version }}
+      - -X main.Revision={{ .ShortCommit }}
     env:
       - CGO_ENABLED=0
+
 archives:
-  - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
-    replacements:
-      darwin: darwin
-      linux: linux
-      windows: windows
-      386: i386
-      amd64: x86_64
+  - name_template: >-
+      {{- .ProjectName }}_
+      {{- if eq .Os "darwin" }}darwin
+      {{- else if eq .Os "linux" }}linux
+      {{- else if eq .Os "windows" }}windows
+      {{- else }}{{ .Os }}{{ end }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end -}}
+    formats: [tar.gz]
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
+
 release:
   prerelease: auto
